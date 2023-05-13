@@ -20,20 +20,22 @@
     var CONFIG = {"hostname":"pjpjsocute.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="​        很早之前就有一个想要搭建个人博客的想法，但是由于学业，工作等原因一直没有付诸于实践。在入职新公司后，由于有了时间，加上一些个人原因，使得我决定开始搭建一个简单的个人blog。Blog中将会记录我的在技术上遇到的一些问题和尝试，以及记录自己的学习和成长过程。">
+  <meta name="description" content="Introduction在计算机科学中，树（Tree）是一种重要的数据结构，用于组织和存储数据。树的结构类似于自然界中的树，由根节点（Root）和一系列连接的节点组成。 ​        树是一种非线性的数据结构，由节点（Node）和连接节点的边（Edge）组成。树的定义和特点如下：  定义：树是一个集合，其中包含一个称为根节点（Root）的特殊节点，以及根节点的零个或多个子树，每个子树也是一棵树">
 <meta property="og:type" content="article">
-<meta property="og:title" content="写在开始">
-<meta property="og:url" content="http://pjpjsocute.github.io/2023/05/12/%E5%86%99%E5%9C%A8%E5%BC%80%E5%A7%8B/index.html">
+<meta property="og:title" content="树——二叉树、平衡二叉树">
+<meta property="og:url" content="http://pjpjsocute.github.io/2023/05/12/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%A0%91%E2%80%94%E2%80%94%E4%BA%8C%E5%8F%89%E6%A0%91%E3%80%81%E5%B9%B3%E8%A1%A1%E4%BA%8C%E5%8F%89%E6%A0%91/index.html">
 <meta property="og:site_name" content="Ray‘s Blog">
-<meta property="og:description" content="​        很早之前就有一个想要搭建个人博客的想法，但是由于学业，工作等原因一直没有付诸于实践。在入职新公司后，由于有了时间，加上一些个人原因，使得我决定开始搭建一个简单的个人blog。Blog中将会记录我的在技术上遇到的一些问题和尝试，以及记录自己的学习和成长过程。">
+<meta property="og:description" content="Introduction在计算机科学中，树（Tree）是一种重要的数据结构，用于组织和存储数据。树的结构类似于自然界中的树，由根节点（Root）和一系列连接的节点组成。 ​        树是一种非线性的数据结构，由节点（Node）和连接节点的边（Edge）组成。树的定义和特点如下：  定义：树是一个集合，其中包含一个称为根节点（Root）的特殊节点，以及根节点的零个或多个子树，每个子树也是一棵树">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2023-05-12T04:14:16.000Z">
-<meta property="article:modified_time" content="2023-05-12T04:25:26.000Z">
+<meta property="article:published_time" content="2023-05-12T05:15:17.000Z">
+<meta property="article:modified_time" content="2023-05-13T08:36:41.533Z">
 <meta property="article:author" content="Ray zhou">
-<meta property="article:tag" content="Trying">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="数据结构">
+<meta property="article:tag" content="Tree">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://pjpjsocute.github.io/2023/05/12/%E5%86%99%E5%9C%A8%E5%BC%80%E5%A7%8B/">
+<link rel="canonical" href="http://pjpjsocute.github.io/2023/05/12/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%A0%91%E2%80%94%E2%80%94%E4%BA%8C%E5%8F%89%E6%A0%91%E3%80%81%E5%B9%B3%E8%A1%A1%E4%BA%8C%E5%8F%89%E6%A0%91/">
 
 
 <script id="page-configurations">
@@ -46,7 +48,7 @@
   };
 </script>
 
-  <title>写在开始 | Ray‘s Blog</title>
+  <title>树——二叉树、平衡二叉树 | Ray‘s Blog</title>
   
 
 
@@ -176,7 +178,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://pjpjsocute.github.io/2023/05/12/%E5%86%99%E5%9C%A8%E5%BC%80%E5%A7%8B/">
+    <link itemprop="mainEntityOfPage" href="http://pjpjsocute.github.io/2023/05/12/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%A0%91%E2%80%94%E2%80%94%E4%BA%8C%E5%8F%89%E6%A0%91%E3%80%81%E5%B9%B3%E8%A1%A1%E4%BA%8C%E5%8F%89%E6%A0%91/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -189,7 +191,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          写在开始
+          树——二叉树、平衡二叉树
         </h1>
 
         <div class="post-meta">
@@ -198,17 +200,23 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2023-05-12 12:14:16 / 修改时间：12:25:26" itemprop="dateCreated datePublished" datetime="2023-05-12T12:14:16+08:00">2023-05-12</time>
+              <time title="创建时间：2023-05-12 13:15:17" itemprop="dateCreated datePublished" datetime="2023-05-12T13:15:17+08:00">2023-05-12</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-05-13 16:36:41" itemprop="dateModified" datetime="2023-05-13T16:36:41+08:00">2023-05-13</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/life/" itemprop="url" rel="index"><span itemprop="name">life</span></a>
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
                 </span>
             </span>
 
@@ -221,8 +229,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2023/05/12/%E5%86%99%E5%9C%A8%E5%BC%80%E5%A7%8B/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2023/05/12/%E5%86%99%E5%9C%A8%E5%BC%80%E5%A7%8B/" itemprop="commentCount"></span>
+    <a title="valine" href="/2023/05/12/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%A0%91%E2%80%94%E2%80%94%E4%BA%8C%E5%8F%89%E6%A0%91%E3%80%81%E5%B9%B3%E8%A1%A1%E4%BA%8C%E5%8F%89%E6%A0%91/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/05/12/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%A0%91%E2%80%94%E2%80%94%E4%BA%8C%E5%8F%89%E6%A0%91%E3%80%81%E5%B9%B3%E8%A1%A1%E4%BA%8C%E5%8F%89%E6%A0%91/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -237,7 +245,35 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>​        很早之前就有一个想要搭建个人博客的想法，但是由于学业，工作等原因一直没有付诸于实践。在入职新公司后，由于有了时间，加上一些个人原因，使得我决定开始搭建一个简单的个人blog。Blog中将会记录我的在技术上遇到的一些问题和尝试，以及记录自己的学习和成长过程。</p>
+        <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>在计算机科学中，树（Tree）是一种重要的数据结构，用于组织和存储数据。树的结构类似于自然界中的树，由根节点（Root）和一系列连接的节点组成。</p>
+<p>​        树是一种非线性的数据结构，由节点（Node）和连接节点的边（Edge）组成。树的定义和特点如下：</p>
+<ol>
+<li><p>定义：树是一个集合，其中包含一个称为根节点（Root）的特殊节点，以及根节点的零个或多个子树，每个子树也是一棵树，子树之间互相独立且没有循环。</p>
+<span id="more"></span>
+</li>
+<li><p>根节点：树的顶层节点，它是唯一的，并且没有父节点。</p>
+</li>
+<li><p>节点关系：树中的节点可以通过边连接，一个节点可以有零个或多个子节点，而每个子节点又可以有自己的子节点，形成层级关系。</p>
+</li>
+<li><p>节点度（Degree）：节点的度是指节点所拥有的子节点数量。例如，一个节点的度为0表示它是叶节点（Leaf），度大于0表示它有子节点。</p>
+</li>
+<li><p>父节点和子节点：每个节点除了根节点外，都有一个父节点，父节点连接着它的子节点。一个节点可以有多个子节点，子节点之间没有顺序关系。</p>
+</li>
+<li><p>兄弟节点：拥有同一个父节点的节点称为兄弟节点。</p>
+</li>
+<li><p>叶节点：没有子节点的节点称为叶节点，也称为终端节点。叶节点位于树的末端。</p>
+</li>
+<li><p>深度（Depth）：节点的深度是指从根节点到该节点所经过的边的数量。根节点的深度为0，它的子节点的深度为1，依此类推。</p>
+</li>
+<li><p>高度（Height）：节点的高度是指从该节点到叶节点的最长路径上所经过的边的数量。叶节点的高度为0，根节点的高度为整棵树的最大高度。</p>
+</li>
+<li><p>子树（Subtree）：一个节点及其所有子节点以及与它们之间的连接构成了一个子树。</p>
+</li>
+<li><p>有向树和无向树：树的边可以是有向的或无向的。有向树中，节点之间的连接有方向性，而无向树中，节点之间的连接没有方向性。</p>
+</li>
+</ol>
+<p>树的特点包括层次性、分支性、层级关系、无环、唯一根节点等，使得树在组织和存储数据方面具有很高的灵活性和适用性。树结构在算法和数据处理中有广泛的应用，例如搜索、排序、图算法等。不同类型的树结构在具体应用中有不同的特点和性能特征，可以根据具体需求选择合适的树结构来解决问题。</p>
+<h3 id="二叉树"><a href="#二叉树" class="headerlink" title="二叉树"></a>二叉树</h3><p>​                </p>
 
     </div>
 
@@ -247,7 +283,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Trying/" rel="tag"># Trying</a>
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag"># 数据结构</a>
+              <a href="/tags/Tree/" rel="tag"># Tree</a>
           </div>
 
         
@@ -255,10 +293,13 @@
 
         
     <div class="post-nav">
-      <div class="post-nav-item"></div>
       <div class="post-nav-item">
-    <a href="/2023/05/12/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%A0%91%E2%80%94%E2%80%94%E7%BA%A2%E9%BB%91%E6%A0%91/" rel="next" title="树——红黑树">
-      树——红黑树 <i class="fa fa-chevron-right"></i>
+    <a href="/2023/05/12/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E2%80%94%E2%80%94%E9%93%BE%E8%A1%A8%E3%80%81%E6%A0%88%E3%80%81%E9%98%9F%E5%88%97/" rel="prev" title="数据结构——链表、栈、队列">
+      <i class="fa fa-chevron-left"></i> 数据结构——链表、栈、队列
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/05/12/%E5%9F%BA%E4%BA%8Espringboot%E2%80%94%E2%80%94%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84BDD%E5%AE%9E%E8%B7%B5/" rel="next" title="springboot+cucumber实践">
+      springboot+cucumber实践 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -319,6 +360,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E5%8F%89%E6%A0%91"><span class="nav-number">2.</span> <span class="nav-text">二叉树</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
