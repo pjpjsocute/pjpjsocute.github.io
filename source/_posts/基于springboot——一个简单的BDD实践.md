@@ -5,6 +5,7 @@ categories: 技术
 tags:
   - 项目
   - java
+comments: true
 ---
 
 # springboot+cucumber实践
