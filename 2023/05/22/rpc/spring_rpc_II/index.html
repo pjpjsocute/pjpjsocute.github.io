@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pjpjsocute.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="基于springBoot,手写一个简单的RPC框架(二) 继续上一章，实现了服务注册后需要实现服务调用。 服务执行一个RPC的服务调用应该分为以下几步： 请求监听； 解码请求； 方法调用； 返回结果； 接下来将依次实现以上功能； 请求监听需要定义一个RpcRequest请求类，由于后续处理 123456789101112131415161718192021222324252627282930313">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于springBoot,手写一个简单的RPC框架(二)">
+<meta property="og:url" content="http://pjpjsocute.github.io/2023/05/22/rpc/spring_rpc_II/index.html">
+<meta property="og:site_name" content="Ray‘s Blog">
+<meta property="og:description" content="基于springBoot,手写一个简单的RPC框架(二) 继续上一章，实现了服务注册后需要实现服务调用。 服务执行一个RPC的服务调用应该分为以下几步： 请求监听； 解码请求； 方法调用； 返回结果； 接下来将依次实现以上功能； 请求监听需要定义一个RpcRequest请求类，由于后续处理 123456789101112131415161718192021222324252627282930313">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://pjpjsocute.github.io/2023/05/22/rpc/spring_rpc_II/image-20230522163034434.png">
+<meta property="og:image" content="http://pjpjsocute.github.io/2023/05/22/rpc/spring_rpc_II/image-20230522174913202.png">
+<meta property="article:published_time" content="2023-05-21T22:00:00.000Z">
+<meta property="article:modified_time" content="2023-05-29T22:00:00.000Z">
+<meta property="article:author" content="Ray zhou">
+<meta property="article:tag" content="项目">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="spi">
+<meta property="article:tag" content="rpc">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://pjpjsocute.github.io/2023/05/22/rpc/spring_rpc_II/image-20230522163034434.png">
+
+<link rel="canonical" href="http://pjpjsocute.github.io/2023/05/22/rpc/spring_rpc_II/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>基于springBoot,手写一个简单的RPC框架(二) | Ray‘s Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Ray‘s Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-english">
+
+    <a href="https://pjpjsocute.github.io/en/" rel="section"><i class="English fa-fw"></i>English</a>
+
+  </li>
+        <li class="menu-item menu-item-guestbook">
+
+    <a href="/guestbook/" rel="section"><i class="留言板 fa-fw"></i>留言板</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://pjpjsocute.github.io/2023/05/22/rpc/spring_rpc_II/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Ray zhou">
+      <meta itemprop="description" content="My bolg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ray‘s Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          基于springBoot,手写一个简单的RPC框架(二)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-05-22 00:00:00" itemprop="dateCreated datePublished" datetime="2023-05-22T00:00:00+02:00">2023-05-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-05-30 00:00:00" itemprop="dateModified" datetime="2023-05-30T00:00:00+02:00">2023-05-30</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2023/05/22/rpc/spring_rpc_II/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2023/05/22/rpc/spring_rpc_II/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="基于springBoot-手写一个简单的RPC框架-二"><a href="#基于springBoot-手写一个简单的RPC框架-二" class="headerlink" title="基于springBoot,手写一个简单的RPC框架(二)"></a>基于springBoot,手写一个简单的RPC框架(二)</h1><p><img src="/2023/05/22/rpc/spring_rpc_II/image-20230522163034434.png" alt="image-20230522163034434"></p>
+<p>继续上一章，实现了服务注册后需要实现服务调用。</p>
+<h3 id="服务执行"><a href="#服务执行" class="headerlink" title="服务执行"></a>服务执行</h3><p>一个RPC的服务调用应该分为以下几步：</p>
+<p>请求监听；</p>
+<p>解码请求；</p>
+<p>方法调用；</p>
+<p>返回结果；</p>
+<p>接下来将依次实现以上功能；</p>
+<h4 id="请求监听"><a href="#请求监听" class="headerlink" title="请求监听"></a>请求监听</h4><p>需要定义一个RpcRequest请求类，由于后续处理</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@AllArgsConstructor</span></span><br><span class="line"><span class="meta">@NoArgsConstructor</span></span><br><span class="line"><span class="meta">@Builder</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RpcRequest</span> <span class="keyword">implements</span> <span class="title class_">Serializable</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">long</span> <span class="variable">serialVersionUID</span> <span class="operator">=</span> <span class="number">8509587559718339795L</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * traceId</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String traceId;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * interface name</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String serviceName;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * method name</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String methodName;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * parameters</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Object[] parameters;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * parameter types</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Class&lt;?&gt;[] paramTypes;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * version</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String version;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * group</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String project;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String group;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * generate service name,use to distinguish different service,and * can be split to get the service name</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">fetchRpcServiceName</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">this</span>.getProject() +<span class="string">&quot;*&quot;</span>+<span class="built_in">this</span>.getGroup()+<span class="string">&quot;*&quot;</span>+ <span class="built_in">this</span>.getServiceName() +<span class="string">&quot;*&quot;</span>+ <span class="built_in">this</span>.getVersion();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>监听请求需要启动一个netty server，用于监听请求service的服务。</p>
+<p>启动时首先需要关闭之前注册的服务等资源。</p>
+<p>随后对netty需要的资源进行依次初始化。</p>
+<p>以下是一段netty的启动代码，其中需要加入编码和解码器用于协议解析，探活。</p>
+<p>同时，需要加入限流和解码后的请求处理hanlder</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">NettyServer</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">NettyServer</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">start</span><span class="params">()</span> &#123;</span><br><span class="line">        LogUtil.info(<span class="string">&quot;netty server init&quot;</span>);</span><br><span class="line"></span><br><span class="line">        ServerShutdownHook.getInstance().registerShutdownHook();</span><br><span class="line"></span><br><span class="line">        <span class="type">EventLoopGroup</span> <span class="variable">listenerGroup</span> <span class="operator">=</span> initListenerGroup();</span><br><span class="line">        <span class="type">EventLoopGroup</span> <span class="variable">workerGroup</span> <span class="operator">=</span> initWorkerGroup();</span><br><span class="line">        <span class="type">DefaultEventExecutorGroup</span> <span class="variable">businessGroup</span> <span class="operator">=</span> initBusinessGroup();</span><br><span class="line"></span><br><span class="line">        LogUtil.info(<span class="string">&quot;netty server start&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">ServerBootstrap</span> <span class="variable">serverBootstrap</span> <span class="operator">=</span> configureServerBootstrap(listenerGroup, workerGroup, businessGroup);</span><br><span class="line">            bindAndListen(serverBootstrap);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            LogUtil.error(<span class="string">&quot;occur exception when start server:&quot;</span>, e);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            shutdown(listenerGroup, workerGroup, businessGroup);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> EventLoopGroup <span class="title function_">initListenerGroup</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">NioEventLoopGroup</span>(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> EventLoopGroup <span class="title function_">initWorkerGroup</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">NioEventLoopGroup</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> DefaultEventExecutorGroup <span class="title function_">initBusinessGroup</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">DefaultEventExecutorGroup</span>(</span><br><span class="line">                Runtime.getRuntime().availableProcessors() * <span class="number">2</span>,</span><br><span class="line">                ThreadPoolFactoryUtil.createThreadFactory(<span class="string">&quot;netty-server-business-group&quot;</span>, <span class="literal">false</span>)</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> ServerBootstrap <span class="title function_">configureServerBootstrap</span><span class="params">(EventLoopGroup listenerGroup, EventLoopGroup workerGroup, DefaultEventExecutorGroup businessGroup)</span> &#123;</span><br><span class="line">        <span class="type">ServerBootstrap</span> <span class="variable">serverBootstrap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ServerBootstrap</span>();</span><br><span class="line">        serverBootstrap.group(listenerGroup, workerGroup)</span><br><span class="line">                .channel(NioServerSocketChannel.class)</span><br><span class="line">                .childOption(ChannelOption.SO_KEEPALIVE, <span class="literal">true</span>)</span><br><span class="line">                .childOption(ChannelOption.TCP_NODELAY, <span class="literal">true</span>)</span><br><span class="line">                .option(ChannelOption.SO_BACKLOG, <span class="number">128</span>)</span><br><span class="line">                .handler(<span class="keyword">new</span> <span class="title class_">LoggingHandler</span>(LogLevel.INFO))</span><br><span class="line">                .childHandler(<span class="keyword">new</span> <span class="title class_">ChannelInitializer</span>&lt;SocketChannel&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">initChannel</span><span class="params">(SocketChannel socketChannel)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">                        <span class="type">ChannelPipeline</span> <span class="variable">pipeline</span> <span class="operator">=</span> socketChannel.pipeline();</span><br><span class="line">                        pipeline.addLast(<span class="keyword">new</span> <span class="title class_">IdleStateHandler</span>(<span class="number">30</span>, <span class="number">0</span>, <span class="number">0</span>, TimeUnit.SECONDS));</span><br><span class="line">                        pipeline.addLast(<span class="keyword">new</span> <span class="title class_">RpcMessageEncoder</span>());</span><br><span class="line">                        pipeline.addLast(<span class="keyword">new</span> <span class="title class_">RpcMessageDecoder</span>());</span><br><span class="line">                        pipeline.addLast(<span class="keyword">new</span> <span class="title class_">DefaultTrafficBlockHandler</span>());</span><br><span class="line">                        pipeline.addLast(businessGroup, <span class="keyword">new</span> <span class="title class_">NettyRpcServerHandler</span>());</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> serverBootstrap;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">bindAndListen</span><span class="params">(ServerBootstrap serverBootstrap)</span> <span class="keyword">throws</span> UnknownHostException, InterruptedException &#123;</span><br><span class="line">        LogUtil.info(<span class="string">&quot;netty server bind port:&#123;&#125; &quot;</span> , PropertiesFileUtil.readPortFromProperties());</span><br><span class="line">        <span class="type">String</span> <span class="variable">host</span> <span class="operator">=</span> InetAddress.getLocalHost().getHostAddress();</span><br><span class="line">        <span class="type">ChannelFuture</span> <span class="variable">f</span> <span class="operator">=</span> serverBootstrap.bind(host, PropertiesFileUtil.readPortFromProperties()).sync();</span><br><span class="line">        f.channel().closeFuture().sync();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">shutdown</span><span class="params">(EventLoopGroup listenerGroup, EventLoopGroup workerGroup, DefaultEventExecutorGroup businessGroup)</span> &#123;</span><br><span class="line">        listenerGroup.shutdownGracefully();</span><br><span class="line">        workerGroup.shutdownGracefully();</span><br><span class="line">        businessGroup.shutdownGracefully();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@NoArgsConstructor(access = AccessLevel.PRIVATE)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ServerShutdownHook</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">ServerShutdownHook</span> <span class="variable">INSTANCE</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ServerShutdownHook</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ServerShutdownHook <span class="title function_">getInstance</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> INSTANCE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * register shut down hook</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">registerShutdownHook</span><span class="params">()</span> &#123;</span><br><span class="line">        Runtime.getRuntime().addShutdownHook(<span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// 执行清理操作</span></span><br><span class="line">            clearAll();</span><br><span class="line">        &#125;));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">clearAll</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 清理注册表</span></span><br><span class="line">            <span class="type">InetSocketAddress</span> <span class="variable">inetSocketAddress</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InetSocketAddress</span>(InetAddress.getLocalHost().getHostAddress(), PropertiesFileUtil.readPortFromProperties());</span><br><span class="line">            CuratorClient.clearRegistry(CuratorClient.getZkClient(), inetSocketAddress);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception ignored) &#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 关闭线程池</span></span><br><span class="line">        ThreadPoolFactoryUtil.shutDownAllThreadPool();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>结合ApplicationRunner，实现server的自动启动</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">NettyServerRunner</span> <span class="keyword">implements</span> <span class="title class_">ApplicationRunner</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> NettyServer nettyServer;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">NettyServerRunner</span><span class="params">()</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">(ApplicationArguments args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        nettyServer.start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="序列化"><a href="#序列化" class="headerlink" title="序列化"></a>序列化</h4><p>本项目默认只是实现了hessen的序列化和gzip加解压，这部分有许多的教程，所以在这里介绍。具体的代码可以在源码的org.example.ray.infrastructure.serialize包和org.example.ray.infrastructure.compress包中找到</p>
+<h4 id="编码与协议"><a href="#编码与协议" class="headerlink" title="编码与协议"></a>编码与协议</h4><p>实现了服务后，我们需要依次为他补充编码和处理类。</p>
+<p>在实现编码的服务之前，首先应该确定底层的编码协议。</p>
+<h5 id="协议"><a href="#协议" class="headerlink" title="协议"></a>协议</h5><p>本项目参考一些已有的协议设计，选择了一种比较简单的协议设计方式，如下图所示:</p>
+<p><img src="/2023/05/22/rpc/spring_rpc_II/image-20230522174913202.png" alt="image-20230522174913202"></p>
+<p>协议由一个16byte的header和body组成。</p>
+<p>其中0-4是magic code，用于校验</p>
+<p>4-5为自定义的协议版本</p>
+<p>5-8是整个message的长度，用于解码</p>
+<p>8-9定义了消息类型，包括请求，响应，心跳请求，心跳响应。</p>
+<p>10为编码方式</p>
+<p>11为压缩方式</p>
+<p>12-16为一个整型，为请求的编号</p>
+<p>Java pojo如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@NoArgsConstructor</span></span><br><span class="line"><span class="meta">@AllArgsConstructor</span></span><br><span class="line"><span class="meta">@Builder</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RpcData</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * rpc message type</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">byte</span>   messageType;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * serialization type</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">byte</span>   serializeMethodCodec;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * compress type</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">byte</span>   compressType;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * request id</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span>    requestId;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * request data</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Object data;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isHeatBeatRequest</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> messageType == RpcConstants.HEARTBEAT_REQUEST_TYPE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">canSendRequest</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> messageType != RpcConstants.HEARTBEAT_REQUEST_TYPE</span><br><span class="line">            &amp;&amp; messageType != RpcConstants.HEARTBEAT_RESPONSE_TYPE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isHeartBeatResponse</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> messageType == RpcConstants.HEARTBEAT_RESPONSE_TYPE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isResponse</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> messageType == RpcConstants.RESPONSE_TYPE;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在了解了协议之后，实现解码</p>
+<h5 id="解码"><a href="#解码" class="headerlink" title="解码"></a>解码</h5><p>LengthFieldBasedFrameDecoder解码器可以参考以下文章</p>
+<figure class="highlight tex"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://zhuanlan.zhihu.com/p/95621344&quot;</span><br></pre></td></tr></table></figure>
+<p>在了解LengthFieldBasedFrameDecoder解码器的基础上，解码的过程其实并不复杂。主要是解码header，校验，和解码body3部分，具体实现可以参考代码和注释。</p>
+<p>解码部分使用java spi，可以定制选择反序列化和解压方法，此部分可以参考github中的代码，或者可以只使用固定序列化和解压方法替代spi部分。</p>
+<p>本项目默认只是实现了hessen的序列化和gzip加解压，这部分有许多的教程，所以在这里介绍。具体的代码可以在源码的org.example.ray.infrastructure.serialize包和org.example.ray.infrastructure.compress包中找到</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RpcMessageDecoder</span> <span class="keyword">extends</span> <span class="title class_">LengthFieldBasedFrameDecoder</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">RpcMessageDecoder</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// lengthFieldOffset: magic code is 4B, and version is 1B, and then full</span></span><br><span class="line">        <span class="comment">// length. so value is 5</span></span><br><span class="line">        <span class="comment">// lengthFieldLength: full length is 4B. so value is 4</span></span><br><span class="line">        <span class="comment">// lengthAdjustment: full length include all data and read 9 bytes</span></span><br><span class="line">        <span class="comment">// before, so the left length is (fullLength-9). so values is -9</span></span><br><span class="line">        <span class="comment">// initialBytesToStrip: we will check magic code and version manually,</span></span><br><span class="line">        <span class="comment">// so do not strip any bytes. so values is 0</span></span><br><span class="line">        <span class="built_in">this</span>(<span class="number">8</span> * <span class="number">1024</span> * <span class="number">1024</span>, <span class="number">5</span>, <span class="number">4</span>, -<span class="number">9</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">RpcMessageDecoder</span><span class="params">(<span class="type">int</span> maxFrameLength, <span class="type">int</span> lengthFieldOffset, <span class="type">int</span> lengthFieldLength, <span class="type">int</span> lengthAdjustment,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> initialBytesToStrip)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(maxFrameLength, lengthFieldOffset, lengthFieldLength, lengthAdjustment, initialBytesToStrip);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> Object <span class="title function_">decode</span><span class="params">(ChannelHandlerContext ctx, ByteBuf in)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// get the bytebuf which contains the frame</span></span><br><span class="line">        <span class="type">Object</span> <span class="variable">decode</span> <span class="operator">=</span> <span class="built_in">super</span>.decode(ctx, in);</span><br><span class="line">        <span class="keyword">if</span> (decode <span class="keyword">instanceof</span> ByteBuf) &#123;</span><br><span class="line">            <span class="type">ByteBuf</span> <span class="variable">byteBuf</span> <span class="operator">=</span> (ByteBuf)decode;</span><br><span class="line">            <span class="comment">// if data not empty, decode it</span></span><br><span class="line">            <span class="keyword">if</span> (byteBuf.readableBytes() &gt;= RpcConstants.HEAD_LENGTH) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="keyword">return</span> decode(byteBuf);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                    LogUtil.error(<span class="string">&quot;Decode error:&#123;&#125; ,input:&#123;&#125;&quot;</span>, e, byteBuf);</span><br><span class="line">                &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                    byteBuf.release();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> decode;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * read byte array from byteBuf</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> byteBuf</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Object <span class="title function_">decode</span><span class="params">(ByteBuf byteBuf)</span> &#123;</span><br><span class="line">        LogUtil.info(<span class="string">&quot;start decode&quot;</span>);</span><br><span class="line">        checkMagicCode(byteBuf);</span><br><span class="line">        checkVersion(byteBuf);</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">fullLength</span> <span class="operator">=</span> byteBuf.readInt();</span><br><span class="line">        <span class="type">RpcData</span> <span class="variable">rpcMessage</span> <span class="operator">=</span> decodeRpcMessage(byteBuf);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (rpcMessage.isHeatBeatRequest()) &#123;</span><br><span class="line">            <span class="keyword">return</span> handleHeatBeatRequest(rpcMessage);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (rpcMessage.isHeartBeatResponse()) &#123;</span><br><span class="line">            <span class="keyword">return</span> handleHeartBeatResponse(rpcMessage);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> handleNormalRequest(rpcMessage, byteBuf, fullLength);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> RpcData <span class="title function_">decodeRpcMessage</span><span class="params">(ByteBuf byteBuf)</span> &#123;</span><br><span class="line">        LogUtil.info(<span class="string">&quot;start decode RpcMessage data&quot;</span>);</span><br><span class="line">        <span class="type">byte</span> <span class="variable">messageType</span> <span class="operator">=</span> byteBuf.readByte();</span><br><span class="line">        <span class="type">byte</span> <span class="variable">codec</span> <span class="operator">=</span> byteBuf.readByte();</span><br><span class="line">        <span class="type">byte</span> <span class="variable">compress</span> <span class="operator">=</span> byteBuf.readByte();</span><br><span class="line">        <span class="type">int</span> <span class="variable">traceId</span> <span class="operator">=</span> byteBuf.readInt();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> RpcData.builder()</span><br><span class="line">                .serializeMethodCodec(codec)</span><br><span class="line">                .traceId(traceId)</span><br><span class="line">                .compressType(compress)</span><br><span class="line">                .messageType(messageType)</span><br><span class="line">                .build();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> RpcData <span class="title function_">handleHeatBeatRequest</span><span class="params">(RpcData rpcMessage)</span> &#123;</span><br><span class="line">        rpcMessage.setData(RpcConstants.PING);</span><br><span class="line">        <span class="keyword">return</span> rpcMessage;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> RpcData <span class="title function_">handleHeartBeatResponse</span><span class="params">(RpcData rpcMessage)</span> &#123;</span><br><span class="line">        rpcMessage.setData(RpcConstants.PONG);</span><br><span class="line">        <span class="keyword">return</span> rpcMessage;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Object <span class="title function_">handleNormalRequest</span><span class="params">(RpcData rpcMessage, ByteBuf byteBuf, <span class="type">int</span> fullLength)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">bodyLength</span> <span class="operator">=</span> fullLength - RpcConstants.HEAD_LENGTH;</span><br><span class="line">        <span class="keyword">if</span> (bodyLength &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> rpcMessage;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> decodeBody(rpcMessage, byteBuf, bodyLength);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> RpcData <span class="title function_">decodeBody</span><span class="params">(RpcData rpcMessage, ByteBuf byteBuf, Integer bodyLength)</span> &#123;</span><br><span class="line">        LogUtil.info(<span class="string">&quot;start decode body&quot;</span>);</span><br><span class="line">        <span class="type">byte</span>[] bodyBytes = <span class="keyword">new</span> <span class="title class_">byte</span>[bodyLength];</span><br><span class="line">        byteBuf.readBytes(bodyBytes);</span><br><span class="line">        <span class="comment">// decompose</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">compressName</span> <span class="operator">=</span> CompressTypeEnum.getName(rpcMessage.getCompressType());</span><br><span class="line">        <span class="type">CompressService</span> <span class="variable">extension</span> <span class="operator">=</span></span><br><span class="line">            ExtensionLoader.getExtensionLoader(CompressService.class).getExtension(compressName);</span><br><span class="line">        bodyBytes = extension.decompress(bodyBytes);</span><br><span class="line">        <span class="comment">// deserialize</span></span><br><span class="line">        <span class="keyword">if</span> (rpcMessage.getMessageType() == RpcConstants.REQUEST_TYPE) &#123;</span><br><span class="line">            <span class="type">RpcRequest</span> <span class="variable">rpcRequest</span> <span class="operator">=</span> ExtensionLoader.getExtensionLoader(SerializationService.class)</span><br><span class="line">                .getExtension(SerializationTypeEnum.getName(rpcMessage.getSerializeMethodCodec()))</span><br><span class="line">                .deserialize(bodyBytes, RpcRequest.class);</span><br><span class="line">            rpcMessage.setData(rpcRequest);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="type">RpcResponse</span> <span class="variable">rpcResponse</span> <span class="operator">=</span> ExtensionLoader.getExtensionLoader(SerializationService.class)</span><br><span class="line">                .getExtension(SerializationTypeEnum.getName(rpcMessage.getSerializeMethodCodec()))</span><br><span class="line">                .deserialize(bodyBytes, RpcResponse.class);</span><br><span class="line">            rpcMessage.setData(rpcResponse);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> rpcMessage;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">checkVersion</span><span class="params">(ByteBuf byteBuf)</span> &#123;</span><br><span class="line">        <span class="type">byte</span> <span class="variable">version</span> <span class="operator">=</span> byteBuf.readByte();</span><br><span class="line">        <span class="keyword">if</span> (version != RpcConstants.VERSION) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;version is not compatible: &quot;</span> + version);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">checkMagicCode</span><span class="params">(ByteBuf byteBuf)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">length</span> <span class="operator">=</span> RpcConstants.MAGIC_NUMBER.length;</span><br><span class="line">        <span class="type">byte</span>[] magicNumber = <span class="keyword">new</span> <span class="title class_">byte</span>[length];</span><br><span class="line">        byteBuf.readBytes(magicNumber);</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; length; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (magicNumber[i] != RpcConstants.MAGIC_NUMBER[i]) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;Unknown magic code: &quot;</span> + <span class="keyword">new</span> <span class="title class_">String</span>(magicNumber));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="编码"><a href="#编码" class="headerlink" title="编码"></a>编码</h5><p>编码的过程相对简单，就是根据协议，依次将对应位的数据写入即可</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RpcMessageEncoder</span> <span class="keyword">extends</span> <span class="title class_">MessageToByteEncoder</span>&lt;RpcData&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">AtomicInteger</span> <span class="variable">ATOMIC_INTEGER</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">encode</span><span class="params">(ChannelHandlerContext channelHandlerContext, RpcData rpcData, ByteBuf byteBuf)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//encode head,marked full length index</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">fullLengthIndex</span> <span class="operator">=</span> encodeHead(rpcData,byteBuf);</span><br><span class="line">            <span class="comment">// encode body</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">fullLength</span> <span class="operator">=</span> encodeBody(rpcData, byteBuf);</span><br><span class="line">            <span class="comment">// back fill full length</span></span><br><span class="line">            encodeLength(fullLengthIndex,fullLength,byteBuf);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            LogUtil.error(<span class="string">&quot;Encode request error:&#123;&#125;,data:&#123;&#125;&quot;</span>, e, rpcData);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RpcException</span>(RpcErrorMessageEnum.REQUEST_ENCODE_FAIL.getCode(),</span><br><span class="line">                RpcErrorMessageEnum.REQUEST_ENCODE_FAIL.getMessage());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="title function_">encodeHead</span><span class="params">(RpcData rpcData,ByteBuf byteBuf)</span>&#123;</span><br><span class="line">        <span class="comment">// write magic code and version 0-5</span></span><br><span class="line">        byteBuf.writeBytes(RpcConstants.MAGIC_NUMBER);</span><br><span class="line">        byteBuf.writeByte(RpcConstants.VERSION);</span><br><span class="line">        <span class="comment">// marked full length index.</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">fullLengthIndex</span> <span class="operator">=</span> byteBuf.writerIndex();</span><br><span class="line">        <span class="comment">// write placeholder for full length 9+</span></span><br><span class="line">        byteBuf.writerIndex(byteBuf.writerIndex() + <span class="number">4</span>);</span><br><span class="line">        <span class="comment">// write message type</span></span><br><span class="line">        byteBuf.writeByte(rpcData.getMessageType());</span><br><span class="line">        <span class="comment">// write codec</span></span><br><span class="line">        byteBuf.writeByte(rpcData.getSerializeMethodCodec());</span><br><span class="line">        <span class="comment">// write compress</span></span><br><span class="line">        byteBuf.writeByte(rpcData.getCompressType());</span><br><span class="line">        <span class="comment">// write requestId</span></span><br><span class="line">        byteBuf.writeInt(ATOMIC_INTEGER.getAndIncrement());</span><br><span class="line">        <span class="keyword">return</span> fullLengthIndex;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="title function_">encodeBody</span><span class="params">(RpcData rpcData,ByteBuf byteBuf)</span>&#123;</span><br><span class="line">        <span class="type">byte</span>[] bodyBytes = <span class="literal">null</span>;</span><br><span class="line">        <span class="type">int</span> <span class="variable">fullLength</span> <span class="operator">=</span> RpcConstants.HEAD_LENGTH;</span><br><span class="line">        <span class="keyword">if</span> (rpcData.canSendRequest()) &#123;</span><br><span class="line">            LogUtil.info(<span class="string">&quot;serialize request start&quot;</span>);</span><br><span class="line">            bodyBytes = ExtensionLoader.getExtensionLoader(SerializationService.class)</span><br><span class="line">                    .getExtension(SerializationTypeEnum.getName(rpcData.getSerializeMethodCodec()))</span><br><span class="line">                    .serialize(rpcData.getData());</span><br><span class="line">            LogUtil.info(<span class="string">&quot;serialize request end&quot;</span>);</span><br><span class="line"></span><br><span class="line">            <span class="type">String</span> <span class="variable">compressName</span> <span class="operator">=</span> CompressTypeEnum.getName(rpcData.getCompressType());</span><br><span class="line">            <span class="type">CompressService</span> <span class="variable">extension</span> <span class="operator">=</span></span><br><span class="line">                    ExtensionLoader.getExtensionLoader(CompressService.class).getExtension(compressName);</span><br><span class="line">            bodyBytes = extension.compress(bodyBytes);</span><br><span class="line">            fullLength += bodyBytes.length;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (bodyBytes != <span class="literal">null</span>) &#123;</span><br><span class="line">            byteBuf.writeBytes(bodyBytes);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> fullLength;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">encodeLength</span><span class="params">(<span class="type">int</span> fullLengthIndex,<span class="type">int</span> fullLength,ByteBuf byteBuf)</span>&#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">writeIndex</span> <span class="operator">=</span> byteBuf.writerIndex();</span><br><span class="line">        byteBuf.writerIndex(fullLengthIndex);</span><br><span class="line">        byteBuf.writeInt(fullLength);</span><br><span class="line">        byteBuf.writerIndex(writeIndex);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="请求处理和调用"><a href="#请求处理和调用" class="headerlink" title="请求处理和调用"></a>请求处理和调用</h4><p>这里实用netty的SimpleChannelInboundHandler，可以避免资源释放的问题</p>
+<p>由于前面已经实现了解码，所以只需要针对不同的请求类型进行不同的处理即可。</p>
+<p>如果是心跳请求，则返回心跳响应</p>
+<p>如果是服务请求，则通过动态代理调用服务，并写入结果返回给消费者。</p>
+<p>定义一个响应类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@AllArgsConstructor</span></span><br><span class="line"><span class="meta">@NoArgsConstructor</span></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@Builder</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RpcResponse</span>&lt;T&gt; <span class="keyword">implements</span> <span class="title class_">Serializable</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">long</span> <span class="variable">serialVersionUID</span> <span class="operator">=</span> <span class="number">347966260947189201L</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * request id</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String            requestId;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * response code</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Integer           code;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * response message</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String            message;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * response body</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> T                 data;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * success</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> data</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> requestId</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> &lt;T&gt;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; RpcResponse&lt;T&gt; <span class="title function_">success</span><span class="params">(T data, String requestId)</span> &#123;</span><br><span class="line">        RpcResponse&lt;T&gt; response = <span class="keyword">new</span> <span class="title class_">RpcResponse</span>&lt;&gt;();</span><br><span class="line">        response.setCode(RpcResponseCodeEnum.SUCCESS.getCode());</span><br><span class="line">        response.setMessage(RpcResponseCodeEnum.SUCCESS.getMessage());</span><br><span class="line">        response.setRequestId(requestId);</span><br><span class="line">        <span class="keyword">if</span> (<span class="literal">null</span> != data) &#123;</span><br><span class="line">            response.setData(data);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> response;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * fail</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> &lt;T&gt;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; RpcResponse&lt;T&gt; <span class="title function_">fail</span><span class="params">()</span> &#123;</span><br><span class="line">        RpcResponse&lt;T&gt; response = <span class="keyword">new</span> <span class="title class_">RpcResponse</span>&lt;&gt;();</span><br><span class="line">        response.setCode(RpcResponseCodeEnum.FAIL.getCode());</span><br><span class="line">        response.setMessage(RpcResponseCodeEnum.FAIL.getMessage());</span><br><span class="line">        <span class="keyword">return</span> response;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>serverhandler的核心方法为channelRead0</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">NettyRpcServerHandler</span> <span class="keyword">extends</span> <span class="title class_">SimpleChannelInboundHandler</span>&lt;RpcData&gt; &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Read the message transmitted by the server</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> RpcRequestHandler rpcRequestHandler;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">NettyRpcServerHandler</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.rpcRequestHandler = SingletonFactory.getInstance(RpcRequestHandler.class);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * heart beat handle</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> ctx</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> evt</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> Exception</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">userEventTriggered</span><span class="params">(ChannelHandlerContext ctx, Object evt)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// if the channel is free，close it</span></span><br><span class="line">        <span class="keyword">if</span> (evt <span class="keyword">instanceof</span> IdleStateEvent) &#123;</span><br><span class="line">            <span class="type">IdleState</span> <span class="variable">state</span> <span class="operator">=</span> ((IdleStateEvent)evt).state();</span><br><span class="line">            <span class="keyword">if</span> (state == IdleState.READER_IDLE) &#123;</span><br><span class="line">                LogUtil.info(<span class="string">&quot;idle check happen, so close the connection&quot;</span>);</span><br><span class="line">                ctx.close();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">super</span>.userEventTriggered(ctx, evt);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Called when an exception occurs in processing a client message</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">exceptionCaught</span><span class="params">(ChannelHandlerContext ctx, Throwable cause)</span> &#123;</span><br><span class="line">        LogUtil.error(<span class="string">&quot;server exceptionCaught&quot;</span>);</span><br><span class="line">        cause.printStackTrace();</span><br><span class="line">        ctx.close();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">channelRead0</span><span class="params">(ChannelHandlerContext ctx, RpcData rpcData)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        LogUtil.info(<span class="string">&quot;Server receive message: [&#123;&#125;]&quot;</span>, rpcData);</span><br><span class="line">        <span class="type">RpcData</span> <span class="variable">rpcMessage</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RpcData</span>();</span><br><span class="line">        setupRpcMessage(rpcMessage);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (rpcData.isHeatBeatRequest()) &#123;</span><br><span class="line">            handleHeartbeat(rpcMessage);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            handleRpcRequest(ctx, rpcData, rpcMessage);</span><br><span class="line">        &#125;</span><br><span class="line">        ctx.writeAndFlush(rpcMessage).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">setupRpcMessage</span><span class="params">(RpcData rpcMessage)</span> &#123;</span><br><span class="line">        rpcMessage.setSerializeMethodCodec(SerializationTypeEnum.HESSIAN.getCode());</span><br><span class="line">        rpcMessage.setCompressType(CompressTypeEnum.GZIP.getCode());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">handleHeartbeat</span><span class="params">(RpcData rpcMessage)</span> &#123;</span><br><span class="line">        rpcMessage.setMessageType(RpcConstants.HEARTBEAT_RESPONSE_TYPE);</span><br><span class="line">        rpcMessage.setData(RpcConstants.PONG);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">handleRpcRequest</span><span class="params">(ChannelHandlerContext ctx, RpcData rpcData, RpcData rpcMessage)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">RpcRequest</span> <span class="variable">rpcRequest</span> <span class="operator">=</span> (RpcRequest)rpcData.getData();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// invoke target method</span></span><br><span class="line">        <span class="type">Object</span> <span class="variable">result</span> <span class="operator">=</span> rpcRequestHandler.handle(rpcRequest);</span><br><span class="line">        LogUtil.info(<span class="string">&quot;Server get result: &#123;&#125;&quot;</span>, result);</span><br><span class="line"></span><br><span class="line">        rpcMessage.setMessageType(RpcConstants.RESPONSE_TYPE);</span><br><span class="line">        buildAndSetRpcResponse(ctx, rpcRequest, rpcMessage, result);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span></span><br><span class="line">        <span class="title function_">buildAndSetRpcResponse</span><span class="params">(ChannelHandlerContext ctx, RpcRequest rpcRequest, RpcData rpcMessage, Object result)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (canBuildResponse(ctx)) &#123;</span><br><span class="line">            <span class="comment">// If the channel is active and writable, a successful RPC response is constructed</span></span><br><span class="line">            RpcResponse&lt;Object&gt; rpcResponse = RpcResponse.success(result, rpcRequest.getTraceId());</span><br><span class="line">            rpcMessage.setData(rpcResponse);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// Construct a failed RPC response if the channel is not writable</span></span><br><span class="line">            RpcResponse&lt;Object&gt; rpcResponse = RpcResponse.fail();</span><br><span class="line">            rpcMessage.setData(rpcResponse);</span><br><span class="line">            LogUtil.error(<span class="string">&quot;Not writable now, message dropped,message:&#123;&#125;&quot;</span>, rpcRequest);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="type">boolean</span> <span class="title function_">canBuildResponse</span><span class="params">(ChannelHandlerContext ctx)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> ctx.channel().isActive() &amp;&amp; ctx.channel().isWritable();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>tipp:  注册到zk后缓存的服务，可以直接基于动态代理进行调用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RpcRequestHandler</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> RpcServiceRegistryAdapter adapter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">RpcRequestHandler</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.adapter = SingletonFactory.getInstance(RpcServiceRegistryAdapterImpl.class);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Processing rpcRequest: call the corresponding method, and then return the</span></span><br><span class="line"><span class="comment">     * method</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">handle</span><span class="params">(RpcRequest request)</span> &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">service</span> <span class="operator">=</span> adapter.getService(request.fetchRpcServiceName());</span><br><span class="line">        <span class="keyword">return</span> invoke(request, service);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * get method execution results</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> rpcRequest client request</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> service service object</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the result of the target method execution</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Object <span class="title function_">invoke</span><span class="params">(RpcRequest rpcRequest, Object service)</span> &#123;</span><br><span class="line">        Object result;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">Method</span> <span class="variable">method</span> <span class="operator">=</span> service.getClass().getMethod(rpcRequest.getMethodName(), rpcRequest.getParamTypes());</span><br><span class="line">            result = method.invoke(service, rpcRequest.getParameters());</span><br><span class="line">            LogUtil.info(<span class="string">&quot;service:[&#123;&#125;] successful invoke method:[&#123;&#125;]&quot;</span>, rpcRequest.getServiceName(),</span><br><span class="line">                rpcRequest.getMethodName());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchMethodException | IllegalArgumentException | InvocationTargetException</span><br><span class="line">            | IllegalAccessException e) &#123;</span><br><span class="line">            LogUtil.error(<span class="string">&quot;occur exception when invoke target method,error:&#123;&#125;,RpcRequest:&#123;&#125;&quot;</span>, e, rpcRequest);</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RpcException</span>(RpcErrorMessageEnum.SERVICE_INVOCATION_FAILURE.getCode(), RpcErrorMessageEnum.SERVICE_INVOCATION_FAILURE.getMessage());</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>至此，一个服务端的代码就完成了</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%A1%B9%E7%9B%AE/" rel="tag"># 项目</a>
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/spi/" rel="tag"># spi</a>
+              <a href="/tags/rpc/" rel="tag"># rpc</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/05/22/rpc/spring_rpc_I/" rel="prev" title="基于springBoot,手写一个简单的RPC框架(一)">
+      <i class="fa fa-chevron-left"></i> 基于springBoot,手写一个简单的RPC框架(一)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/05/22/rpc/spi/" rel="next" title="java spi 应用">
+      java spi 应用 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8EspringBoot-%E6%89%8B%E5%86%99%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84RPC%E6%A1%86%E6%9E%B6-%E4%BA%8C"><span class="nav-number">1.</span> <span class="nav-text">基于springBoot,手写一个简单的RPC框架(二)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E6%89%A7%E8%A1%8C"><span class="nav-number">1.0.1.</span> <span class="nav-text">服务执行</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%B7%E6%B1%82%E7%9B%91%E5%90%AC"><span class="nav-number">1.0.1.1.</span> <span class="nav-text">请求监听</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BA%8F%E5%88%97%E5%8C%96"><span class="nav-number">1.0.1.2.</span> <span class="nav-text">序列化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BC%96%E7%A0%81%E4%B8%8E%E5%8D%8F%E8%AE%AE"><span class="nav-number">1.0.1.3.</span> <span class="nav-text">编码与协议</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%8D%8F%E8%AE%AE"><span class="nav-number">1.0.1.3.1.</span> <span class="nav-text">协议</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%A7%A3%E7%A0%81"><span class="nav-number">1.0.1.3.2.</span> <span class="nav-text">解码</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%BC%96%E7%A0%81"><span class="nav-number">1.0.1.3.3.</span> <span class="nav-text">编码</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%B7%E6%B1%82%E5%A4%84%E7%90%86%E5%92%8C%E8%B0%83%E7%94%A8"><span class="nav-number">1.0.1.4.</span> <span class="nav-text">请求处理和调用</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Ray zhou</p>
+  <div class="site-description" itemprop="description">My bolg</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ray zhou</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'tHsqv8rp8m3NFxGeqNYcSMkI-MdYXbMMI',
+      appKey     : 'Ly0JgGKm82bkdfXMxPbisC2p',
+      placeholder: "输入你的评论\\n昵称为必填项目",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : 'https://thsqv8rp.api.lncldglobal.com'
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

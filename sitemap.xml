@@ -2,6 +2,55 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://pjpjsocute.github.io/2025/08/18/java_guide/java_guide/</loc>
+    
+    <lastmod>2025-08-19T22:00:00.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://pjpjsocute.github.io/2023/05/22/rpc/spi/</loc>
+    
+    <lastmod>2023-07-09T22:00:00.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://pjpjsocute.github.io/2023/05/22/rpc/spring_rpc_II/</loc>
+    
+    <lastmod>2023-05-29T22:00:00.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://pjpjsocute.github.io/2023/05/30/rpc/spring_rpc_III/</loc>
+    
+    <lastmod>2023-05-29T22:00:00.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://pjpjsocute.github.io/2023/05/21/LeetCode/LeetCode-005/</loc>
+    
+    <lastmod>2023-05-21T22:00:00.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://pjpjsocute.github.io/2023/05/22/rpc/spring_rpc_I/</loc>
+    
+    <lastmod>2023-05-21T22:00:00.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://pjpjsocute.github.io/2023/05/15/%25E6%2595%25B0%25E6%258D%25AE%25E7%25BB%2593%25E6%259E%2584/bit/</loc>
+    
+    <lastmod>2023-05-15T15:42:56.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://pjpjsocute.github.io/2023/05/12/%25E5%259F%25BA%25E4%25BA%258Espringboot%25E2%2580%2594%25E2%2580%2594%25E4%25B8%2580%25E4%25B8%25AA%25E7%25AE%2580%25E5%258D%2595%25E7%259A%2584BDD%25E5%25AE%259E%25E8%25B7%25B5/</loc>
     
     <lastmod>2023-05-13T08:37:20.685Z</lastmod>
